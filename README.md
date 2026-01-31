@@ -8,6 +8,7 @@
   - [SAM File Format](#sam-file-format)
   - [BED File Format](#bed-file-format)
   - [VCF File Format](#vcf-file-format)
+  - [AnnData (h5ad) File Format](#anndata-h5ad-file-format)
 
 # Bioinformatics file formats
 
@@ -175,3 +176,63 @@ Variant Call Format for storing gene sequence variations. Fields are **tab-separ
 * `INFO` - Semicolon-separated list of additional information (key=value pairs)
 * `FORMAT` - Colon-separated list of genotype fields (only present if genotype data exists)
 * `SAMPLE(s)` - Genotype information for each sample, corresponding to FORMAT fields
+
+## AnnData (h5ad) File Format
+
+<https://anndata.readthedocs.io/en/latest/fileformat-prose.html>
+
+AnnData (Annotated Data) is a Python data structure from the `anndata` package, commonly used with scanpy for single-cell genomics analysis. AnnData objects are saved to disk as `.h5ad` files, which are based on the HDF5 format.
+
+### Core Components
+
+* `X` - The primary data matrix (cells × genes). Can be dense (numpy array) or sparse (scipy sparse matrix). Typically contains expression counts or normalized values.
+* `obs` - Observation (cell) metadata as a pandas DataFrame. Rows correspond to cells, columns are annotations (e.g., cell type, batch, cluster labels). Index contains cell barcodes/IDs.
+* `var` - Variable (gene/feature) metadata as a pandas DataFrame. Rows correspond to genes, columns are annotations (e.g., gene symbols, highly variable flags). Index contains gene IDs.
+* `uns` - Unstructured annotation as a dictionary. Stores miscellaneous data that doesn't fit elsewhere (e.g., color palettes, analysis parameters, UMAP settings).
+
+### Additional Layers and Embeddings
+
+* `layers` - Alternative matrix representations with the same dimensions as `X`. Common uses include storing raw counts in `layers['counts']` while `X` holds normalized data.
+* `obsm` - Multi-dimensional observation annotations (cells × dimensions). Stores embeddings like PCA (`obsm['X_pca']`), UMAP (`obsm['X_umap']`), or t-SNE coordinates.
+* `varm` - Multi-dimensional variable annotations (genes × dimensions). Stores gene-level embeddings like PCA loadings (`varm['PCs']`).
+* `obsp` - Pairwise observation annotations (cells × cells). Stores cell-cell relationships like neighborhood graphs (`obsp['connectivities']`, `obsp['distances']`).
+* `varp` - Pairwise variable annotations (genes × genes). Stores gene-gene relationships.
+
+### File Structure
+
+The h5ad format stores AnnData as an HDF5 file with the following structure:
+
+```
+file.h5ad
+|-- X                    # Main data matrix
+|-- obs                  # Cell metadata (DataFrame stored as HDF5 group)
+|-- var                  # Gene metadata (DataFrame stored as HDF5 group)
+|-- uns/                 # Unstructured data (nested dictionaries/arrays)
+|-- obsm/                # Cell embeddings (e.g., X_pca, X_umap)
+|-- varm/                # Gene embeddings
+|-- obsp/                # Cell-cell graphs
+|-- varp/                # Gene-gene relationships
++-- layers/              # Alternative matrices
+```
+
+### Reading and Writing
+
+```python
+import anndata as ad
+import scanpy as sc
+
+# Read h5ad file
+adata = ad.read_h5ad('file.h5ad')
+# or
+adata = sc.read_h5ad('file.h5ad')
+
+# Write h5ad file
+adata.write_h5ad('output.h5ad')
+
+# Write with compression
+adata.write_h5ad('output.h5ad', compression='gzip')
+```
+
+### Sparse Matrix Support
+
+The `X` matrix and layers often use sparse formats to efficiently store single-cell data (which is typically >90% zeros). Common formats include CSR (Compressed Sparse Row) and CSC (Compressed Sparse Column).
