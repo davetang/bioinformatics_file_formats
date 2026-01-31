@@ -1,6 +1,7 @@
 ## Table of Contents
 
 - [Bioinformatics file formats](#bioinformatics-file-formats)
+  - [Coordinate Systems](#coordinate-systems)
   - [GFF/GTF File Format](#gffgtf-file-format)
   - [FASTA File Format](#fasta-file-format)
   - [FASTQ File Format](#fastq-file-format)
@@ -13,6 +14,64 @@
 ![https://xkcd.com/927/](assets/standards.png)
 
 I lose track of all the bioinformatics file formats, so finally I'll keep track of them here.
+
+## Coordinate Systems
+
+Different bioinformatics file formats use different coordinate systems, which is a common source of off-by-one errors. Understanding these systems is essential when converting between formats.
+
+### 0-based vs 1-based Coordinates
+
+* **1-based**: The first base of a sequence is position 1. This is the "natural" counting system used by biologists.
+* **0-based**: The first base of a sequence is position 0. This is common in programming languages and some file formats.
+
+### Closed vs Half-open Intervals
+
+* **Closed interval**: Both the start and end positions are included in the interval.
+* **Half-open interval**: The start position is included, but the end position is excluded.
+
+### Mathematical Interval Notation
+
+Intervals can be expressed using bracket notation where square brackets $[\ ]$ indicate inclusion and parentheses $(\ )$ indicate exclusion:
+
+| Notation | Name | Description |
+|----------|------|-------------|
+| $[a, b]$ | Closed | Both endpoints included: $a \leq x \leq b$ |
+| $[a, b)$ | Half-open (left-closed, right-open) | Start included, end excluded: $a \leq x < b$ |
+| $(a, b]$ | Half-open (left-open, right-closed) | Start excluded, end included: $a < x \leq b$ |
+| $(a, b)$ | Open | Both endpoints excluded: $a < x < b$ |
+
+### Coordinate Systems by File Format
+
+| Format | Base | Interval | Notation | Example for bases 1-3 |
+|--------|------|----------|----------|----------------------|
+| GFF/GTF | 1-based | Closed | $[\text{start}, \text{end}]$ | start=1, end=3 |
+| SAM | 1-based | Closed | $[\text{start}, \text{end}]$ | POS=1 (+ CIGAR 3M) |
+| VCF | 1-based | Closed | $[\text{start}, \text{end}]$ | POS=1 |
+| BED | 0-based | Half-open | $[\text{start}, \text{end})$ | start=0, end=3 |
+| BAM (internal) | 0-based | Half-open | $[\text{start}, \text{end})$ | pos=0, end=3 |
+| UCSC database | 0-based | Half-open | $[\text{start}, \text{end})$ | chromStart=0, chromEnd=3 |
+
+### Conversion Example
+
+Consider a 3-nucleotide feature (e.g., `ATG`) at the very beginning of a chromosome:
+
+```
+Sequence:    A  T  G  C  A  A  ...
+1-based:     1  2  3  4  5  6  ...
+0-based:     0  1  2  3  4  5  ...
+```
+
+To represent the `ATG` region:
+
+* **GFF/GTF** (1-based, closed): `start=1, end=3`
+* **BED** (0-based, half-open): `start=0, end=3`
+* **SAM** (1-based): `POS=1` with CIGAR `3M`
+
+The length of an interval can be calculated as:
+* Closed interval: $\text{length} = \text{end} - \text{start} + 1$
+* Half-open interval: $\text{length} = \text{end} - \text{start}$
+
+This is why half-open coordinates are convenient for programming—the length calculation is simpler, and adjacent features share the same boundary coordinate without overlap.
 
 ## GFF/GTF File Format
 
