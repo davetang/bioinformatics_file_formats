@@ -28,6 +28,7 @@ Different bioinformatics file formats use different coordinate systems, which is
 ### Closed vs Half-open Intervals
 
 * **Closed interval**: Both the start and end positions are included in the interval.
+    * My silly way to remember it is "if you're in a shop and it closed, you're included".
 * **Half-open interval**: The start position is included, but the end position is excluded.
 
 ### Mathematical Interval Notation
